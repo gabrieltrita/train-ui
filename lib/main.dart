@@ -7,4 +7,5 @@ import 'package:train_ui/main.data.dart';
 
 void main() => runApp(MultiProvider(providers: [
   ...dataProviders(() => getApplicationDocumentsDirectory(), clear: true),
+  Provider(create: (context) => bool),
 ], child: ModularApp(module: AppModule())));

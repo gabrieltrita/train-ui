@@ -1,8 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_data/flutter_data.dart';
 import 'package:flutter_data_state/flutter_data_state.dart';
+import 'package:flutter_modular/flutter_modular.dart';
+import 'package:train_ui/app/modules/trainings/trainings_bloc.dart';
+import 'package:train_ui/app/modules/trainings/trainings_module.dart';
 import 'package:train_ui/app/repositories/training.dart';
-import 'package:provider/provider.dart';
 
 class TrainingPage extends StatefulWidget {
   @override
@@ -12,6 +14,39 @@ class TrainingPage extends StatefulWidget {
 class _TrainingPageState extends State<TrainingPage> {
   bool isEditing = false;
   String labelEdit = 'Edit';
+  var bloc = TraninigModule.to.get<TrainingBloc>();
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  Future onDidReceiveLocalNotification(
+      int id, String title, String body, String payload) async {
+    // display a dialog with the notification details, tap ok to go to another page
+    showCupertinoDialog(
+      context: context,
+      builder: (BuildContext context) => CupertinoAlertDialog(
+            title: Text(title),
+            content: Text(body),
+            actions: [
+              CupertinoDialogAction(
+                isDefaultAction: true,
+                child: Text('Ok'),
+                onPressed: () async {
+                  Navigator.of(context, rootNavigator: true).pop();
+                  await Navigator.push(
+                    context,
+                    CupertinoPageRoute(
+                      builder: (context) => Center(),
+                    ),
+                  );
+                },
+              )
+            ],
+          ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +70,8 @@ class _TrainingPageState extends State<TrainingPage> {
       ),
       child: Builder(
       builder: (context) {
-        if (context.watch<DataManager>() == null) {
+        if (bloc.repository == null) {
+
           return const CupertinoActivityIndicator();
         }
         return Column(
@@ -49,17 +85,20 @@ class _TrainingPageState extends State<TrainingPage> {
 
 class TrainingScreen extends StatelessWidget {
   final bool isEditing;
+  final TrainingBloc bloc = TraninigModule.to.get<TrainingBloc>();
+
   TrainingScreen(this.isEditing);
 
   @override
   Widget build(BuildContext context) {
-    final repository = context.watch<Repository<Training>>();
     return DataStateBuilder(
-      notifier: repository.watchAll(),
+      notifier: bloc.responseOut,
       builder: (context, state, snapshot, _) {
-       if (state.isLoading && state.model.length != 0) {
+       if ((state.isLoading && state.model.length != 0) || state.model.length == 0) {
           print(state);
-          return Center(child: const CupertinoActivityIndicator());
+          return Center(
+            heightFactor: 40.0,
+            child: const CupertinoActivityIndicator());
         }
         return SizedBox(
             height: 700.0,
@@ -79,6 +118,7 @@ class TrainingScreen extends StatelessWidget {
 }
 
 class ItemTraining extends StatelessWidget {
+  final TrainingBloc bloc = TraninigModule.to.get<TrainingBloc>();
   final Training training;
   final bool isEditing;
   ItemTraining(this.training, this.isEditing);
@@ -89,7 +129,7 @@ class ItemTraining extends StatelessWidget {
         CupertinoActionSheetAction(
           child : Text('Delete Training ${training.name}', style: TextStyle(color: CupertinoColors.destructiveRed)),
           onPressed: () async {
-            training.delete();
+            bloc.delete(training);
             Navigator.of(context, rootNavigator: true).pop();
           },
         ),
@@ -107,7 +147,9 @@ class ItemTraining extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: <Widget>[
-        Text(training.name, style: TextStyle(color: CupertinoColors.activeBlue,fontSize: 22)),
+        GestureDetector(
+          onTap: () => { Modular.to.pushNamed('/workout', arguments: training) },
+          child: Text(training.name, style: TextStyle(color: CupertinoColors.activeBlue,fontSize: 22))),
         Expanded(child: Container(
           alignment: Alignment.centerRight,
           margin: EdgeInsets.only(right: 10.0),
@@ -120,6 +162,7 @@ class ItemTraining extends StatelessWidget {
 }
 
 class AddTrainingButtomBar extends StatelessWidget {
+  final TrainingBloc bloc = TraninigModule.to.get<TrainingBloc>();
   final myController = TextEditingController();
   final bool isEditing;
 
@@ -143,7 +186,9 @@ class AddTrainingButtomBar extends StatelessWidget {
         ],
       ),
       actions: <Widget> [
-        CupertinoDialogAction(child: const Text('Save'), isDefaultAction: true, onPressed: () => { addTraining(context) }),
+        CupertinoDialogAction(child: const Text('Save'), isDefaultAction: true, onPressed: () => {
+          bloc.add(myController.text).whenComplete(Navigator.of(context, rootNavigator: true).pop())
+        }),
         CupertinoDialogAction(child: const Text('Cancel'), isDestructiveAction: true, onPressed: () => Navigator.of(context, rootNavigator: true).pop()),
       ],
     ));

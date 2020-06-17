@@ -36,6 +36,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.4.1"
+  bloc_pattern:
+    dependency: "direct main"
+    description:
+      name: bloc_pattern
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "2.5.1"
   boolean_selector:
     dependency: transitive
     description:
@@ -169,13 +176,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.2.7"
-  dio:
-    dependency: "direct main"
-    description:
-      name: dio
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "3.0.9"
   fixnum:
     dependency: transitive
     description:
